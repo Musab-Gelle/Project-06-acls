@@ -1,0 +1,89 @@
+Project 6 Configuration
+HQ-Router-Config
+enable
+configure terminal
+hostname HQ-Router
+
+! ---- Router-on-a-Stick (Inter-VLAN Routing) ----
+interface g0/0
+ no shutdown
+ exit
+
+interface g0/0.10
+ encapsulation dot1Q 10
+ ip address 192.168.10.1 255.255.255.0
+ exit
+
+interface g0/0.20
+ encapsulation dot1Q 20
+ ip address 192.168.20.1 255.255.255.0
+ exit
+
+interface g0/0.30
+ encapsulation dot1Q 30
+ ip address 192.168.30.1 255.255.255.0
+ exit
+
+! ---- WAN Interface ----
+interface g0/1
+ ip address 10.0.0.1 255.255.255.252
+ no shutdown
+ exit
+
+! ---- OSPF ----
+router ospf 1
+ router-id 1.1.1.1
+ network 192.168.10.0 0.0.0.255 area 0
+ network 192.168.20.0 0.0.0.255 area 0
+ network 192.168.30.0 0.0.0.255 area 0
+ network 10.0.0.0 0.0.0.3 area 0
+ no passive-interface g0/1
+exit
+
+! ---- ACL 110 (HR Restrictions) ----
+access-list 110 deny ip 192.168.10.0 0.0.0.255 192.168.20.0 0.0.0.255
+access-list 110 permit ip 192.168.10.0 0.0.0.255 any
+interface g0/0.10
+ ip access-group 110 in
+exit
+
+! ---- ACL 120 (Branch Restrictions) ----
+access-list 120 permit ip 192.168.40.0 0.0.0.255 host 192.168.30.100
+access-list 120 deny ip 192.168.40.0 0.0.0.255 any
+interface g0/1
+ ip access-group 120 in
+exit
+
+end
+write memory
+
+Branch-Router-Config
+enable
+configure terminal
+hostname Branch-Router
+
+! ---- LAN Interface ----
+interface g0/0
+ ip address 192.168.40.1 255.255.255.0
+ no shutdown
+ exit
+
+! ---- WAN Interface ----
+interface g0/1
+ ip address 10.0.0.2 255.255.255.252
+ no shutdown
+ exit
+
+! ---- OSPF ----
+router ospf 1
+ router-id 2.2.2.2
+ network 192.168.40.0 0.0.0.255 area 0
+ network 10.0.0.0 0.0.0.3 area 0
+ no passive-interface g0/1
+exit
+
+end
+write memory
+
+
+
